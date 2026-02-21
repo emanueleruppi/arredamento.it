@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="background: #f8f9fa; min-height: 90vh; padding: 40px 20px;">
+    
+    <div style="max-width: 1200px; margin: 0 auto;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+                <h1 style="color: #2c3e50; margin: 0;">Il tuo Profilo</h1>
+                <p style="color: #7f8c8d; margin-top: 5px;">Benvenuto, {{ u.nome }}.</p>
+            </div>
+            <a href="/logout" style="background: #e74c3c; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; transition: 0.3s;">
+                <i class="fas fa-sign-out-alt"></i> Esci
+            </a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 30px;">
+
+            <div class="account-card">
+                <div class="card-header">
+                    <i class="fas fa-user-circle"></i> Dati Personali
+                </div>
+                <div class="card-body">
+                    
+                    <div class="info-group">
+                        <label>Nome Completo</label>
+                        <input type="text" value="{{ u.nome }}" disabled style="background: #e9ecef; cursor: not-allowed; font-weight:bold; color:#555;">
+                    </div>
+
+                    <div class="info-group">
+                        <label>Email</label>
+                        <input type="email" id="edit-email" value="{{ u.email }}" disabled class="input-locked">
+                    </div>
+
+                    <div class="info-group">
+                        <label>Telefono (11 Cifre)</label>
+                        <input type="tel" id="edit-tel" value="{{ u.telefono or '' }}" placeholder="Es. 00012345678" disabled class="input-locked" maxlength="11">
+                    </div>
+
+                    <div class="info-group">
+                        <label>Password</label>
+                        <input type="password" id="edit-pass" placeholder="********" disabled class="input-locked">
+                    </div>
+
+                    <div style="margin-top: auto;">
+                        <button id="btn-enable-edit" onclick="abilitaModifica()" class="btn-outline" style="border-color:#3498db; color:#3498db;">
+                            <i class="fas fa-pen"></i> MODIFICA DATI
+                        </button>
+
+                        <div id="action-buttons" style="display: none; gap: 10px;">
+                            <button onclick="salvaModifiche()" class="btn-save" style="flex: 2;">
+                                <i class="fas fa-save"></i> SALVA
+                            </button>
+                            <button onclick="annullaModifica()" class="btn-outline" style="flex: 1; border-color:#e74c3c; color:#e74c3c;">
+                                ANNULLA
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <p id="msg-esito" style="display:none; margin-top:15px; padding: 10px; border-radius: 5px; text-align:center; font-weight:bold; font-size: 0.9rem;"></p>
+
+                </div>
+            </div>
+
+            <div class="account-card">
+                <div class="card-header">
+                    <i class="fas fa-map-marker-alt"></i> Indirizzi
+                </div>
+                <div class="card-body">
+                    
+                    <div style="flex: 1; overflow-y: auto; max-height: 250px; margin-bottom: 20px;">
+                        {% if u.indirizzi and u.indirizzi|length > 0 %}
+                            
+                            {% for indirizzo in u.indirizzi %}
+                            <div class="item-box address-style">
+                                <div style="display:flex; justify-content:space-between; align-items: flex-start;">
+                                    <div>
+                                        <strong style="color:#2c3e50; font-size: 0.9rem;">
+                                            {% if loop.index == 1 %} <i class="fas fa-star" style="color:#f1c40f"></i> Principale {% else %} Indirizzo {{ loop.index }} {% endif %}
+                                        </strong>
+                                        <p style="margin: 5px 0; font-weight: bold; color: #333;">
+                                            {{ indirizzo.nome }} {{ indirizzo.cognome }}
+                                        </p>
+                                        <p style="margin: 0; color:#555; line-height:1.4; font-size: 0.9rem;">
+                                            {{ indirizzo.via }}, {{ indirizzo.civico }}<br>
+                                            {{ indirizzo.cap }} - {{ indirizzo.citta }} ({{ indirizzo.provincia }})
+                                        </p>
+                                    </div>
+                                    
+                                    <button onclick="eliminaIndirizzo({{loop.index0}})" title="Elimina" class="btn-trash">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p style="color:#999; text-align:center;">Nessun indirizzo salvato.</p>
+                        {% endif %}
+                    </div>
+
+                    <button onclick="apriModalIndirizzo()" class="btn-outline">
+                        <i class="fas fa-plus"></i> AGGIUNGI NUOVO INDIRIZZO
+                    </button>
+                </div>
+            </div>
+
+            <div class="account-card">
+                <div class="card-header">
+                    <i class="fas fa-credit-card"></i> Pagamenti
+                </div>
+                <div class="card-body">
+                    
+                    <div style="flex: 1; overflow-y: auto; max-height: 250px; margin-bottom: 20px;">
+                        {% if u.metodi_pagamento and u.metodi_pagamento|length > 0 %}
+                            {% for carta in u.metodi_pagamento %}
+                            <div class="item-box card-style">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    {% if carta.numero.startswith('4') %}
+                                        <i class="fab fa-cc-visa fa-2x" style="color: #1a1f71;"></i>
+                                    {% else %}
+                                        <i class="far fa-credit-card fa-2x" style="color: #555;"></i>
+                                    {% endif %}
+                                    
+                                    <div style="flex:1;">
+                                        <div style="font-weight: bold; color: #333;">•••• {{ carta.numero[-4:] }}</div>
+                                        <div style="font-size: 0.8rem; color: #777;">
+                                            Scade: {{ carta.scadenza }} <br>
+                                            <span style="font-size: 0.75rem; text-transform:uppercase;">{{ carta.titolare }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <button onclick="eliminaCarta({{ loop.index0 }})" title="Rimuovi" class="btn-trash">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div style="text-align: center; padding: 20px; color: #999;">
+                                <p>Nessuna carta salvata.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <button onclick="apriModalCarta()" class="btn-outline">
+                        <i class="fas fa-plus"></i> AGGIUNGI CARTA
+                    </button>
+                </div>
+            </div>
+
+            <div class="account-card" style="grid-column: 1 / -1;">
+                <div class="card-header" style="background: #27ae60;">
+                    <i class="fas fa-box-open"></i> I Miei Ordini
+                </div>
+                <div class="card-body">
+                    
+                    {% if ordini and ordini|length > 0 %}
+                        <div style="display: grid; gap: 20px;">
+                            {% for ordine in ordini %}
+                            <div class="order-box">
+                                <div class="order-header">
+                                    <div>
+                                        <span class="order-date"><i class="far fa-calendar-alt"></i> {{ ordine.data_ordine.strftime('%d/%m/%Y %H:%M') }}</span>
+                                        <span class="order-id">#{{ loop.index }}</span>
+                                    </div>
+                                    <span class="order-status">{{ ordine.stato }}</span>
+                                </div>
+
+                                <div class="order-items">
+                                    {% for prod in ordine.prodotti %}
+                                    <div class="order-item-row">
+                                        <img src="{{ prod.immagine }}" alt="img">
+                                        <div style="flex:1;">
+                                            <strong>{{ prod.nome }}</strong>
+                                            <div style="font-size:0.85rem; color:#777;">Quantità: {{ prod.quantita }}</div>
+                                        </div>
+                                        <div style="font-weight:bold;">€ {{ prod.prezzo }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="order-footer">
+                                    <span>Pagamento: <strong>{{ ordine.metodo|upper }}</strong></span>
+                                    <span style="font-size:1.2rem; font-weight:bold; color:#2c3e50;">Totale: € {{ "%.2f"|format(ordine.totale) }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div style="text-align: center; padding: 40px; color: #999;">
+                            <i class="fas fa-shopping-basket fa-3x" style="margin-bottom: 15px; opacity: 0.5;"></i>
+                            <h3>Nessun ordine effettuato</h3>
+                            <p>Non hai ancora acquistato nulla. Visita il catalogo!</p>
+                            <a href="/catalogo" class="btn-save" style="display:inline-block; width:auto; margin-top:10px; text-decoration:none; background:#2c3e50;">VAI AL CATALOGO</a>
+                        </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="modal-address" class="modal-overlay">
+    <div class="modal-box">
+        <span class="modal-close" onclick="chiudiModalIndirizzo()">&times;</span>
+        <h3 style="color:#2c3e50; margin-bottom:20px;">Nuovo Indirizzo </h3>
+        
+        <div class="form-grid">
+            <div style="grid-column: span 1;"><label class="lbl">Nome</label><input type="text" id="addr-nome" class="inp" placeholder="Mario"></div>
+            <div style="grid-column: span 1;"><label class="lbl">Cognome</label><input type="text" id="addr-cognome" class="inp" placeholder="Rossi"></div>
+            <div style="grid-column: span 2;"><label class="lbl">Via / Piazza</label><input type="text" id="addr-via" class="inp" placeholder="Es. Via Roma"></div>
+            <div style="grid-column: span 1;"><label class="lbl">Civico</label><input type="text" id="addr-civico" class="inp" placeholder="N°"></div>
+            <div style="grid-column: span 2;"><label class="lbl">Città</label><input type="text" id="addr-citta" class="inp" placeholder="Es. Milano"></div>
+            <div style="grid-column: span 1;"><label class="lbl">Prov.</label><input type="text" id="addr-prov" class="inp" placeholder="MI" maxlength="2" style="text-transform:uppercase;"></div>
+            <div style="grid-column: span 3;"><label class="lbl">CAP</label><input type="text" id="addr-cap" class="inp" placeholder="00000" maxlength="5"></div>
+        </div>
+
+        <button onclick="salvaIndirizzo()" class="btn-save" style="margin-top:20px;">SALVA INDIRIZZO</button>
+    </div>
+</div>
+
+<div id="modal-card" class="modal-overlay">
+    <div class="modal-box">
+        <span class="modal-close" onclick="chiudiModalCarta()">&times;</span>
+        <h3 style="color:#2c3e50; margin-bottom:20px;">Nuova Carta 💳</h3>
+        
+        <div style="text-align: left;">
+            <div style="margin-bottom: 15px;">
+                <label class="lbl">Titolare Carta</label>
+                <input type="text" id="card-titolare" class="inp" placeholder="MARIO ROSSI">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label class="lbl">Numero Carta (16 cifre)</label>
+                <div style="position: relative;">
+                    <i class="far fa-credit-card" style="position: absolute; left: 10px; top: 12px; color: #999;"></i>
+                    <input type="text" id="card-numero" class="inp" style="padding-left: 35px;" placeholder="0000 0000 0000 0000" maxlength="16">
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px;">
+                <div style="flex: 1;"><label class="lbl">Scadenza</label><input type="text" id="card-scadenza" class="inp" placeholder="MM/AA" maxlength="5"></div>
+                <div style="flex: 1;"><label class="lbl">CVC</label><input type="password" class="inp" placeholder="123" maxlength="3"></div>
+            </div>
+        </div>
+
+        <button onclick="salvaCarta()" class="btn-save" style="margin-top:25px; background: #2c3e50;">AGGIUNGI CARTA</button>
+    </div>
+</div>
+
+<style>
+    /* general card */
+    .account-card { background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; height: 100%; }
+    .card-header { background: #2c3e50; color: white; padding: 15px 20px; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+    .card-body { padding: 25px; flex: 1; display: flex; flex-direction: column; }
+    
+    /* input and buttons */
+    .info-group { margin-bottom: 20px; } .info-group label { display: block; font-size: 0.85rem; color: #7f8c8d; font-weight: bold; text-transform: uppercase; } .info-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; color: #333; font-weight: 500; box-sizing: border-box; transition: 0.3s; }
+    .input-locked { background-color: #f9f9f9; border: 1px solid transparent; color: #555; }
+    .input-active { background-color: white !important; border: 1px solid #3498db !important; box-shadow: 0 0 5px rgba(52, 152, 219, 0.2); }
+    .btn-save { width: 100%; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .btn-outline { width: 100%; padding: 10px; border: 2px solid #ccc; background: none; border-radius: 6px; color: #7f8c8d; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: auto; }
+    .btn-outline:hover { background: #f0f4f8; border-color: #2c3e50; color: #2c3e50; }
+    .btn-trash { background:none; border:none; cursor:pointer; color:#e74c3c; padding: 5px; transition: 0.2s; }
+    
+    /* Address Lists/Cards */
+    .item-box { border: 1px solid #eee; padding: 15px; border-radius: 6px; margin-bottom: 15px; background: #fdfdfd; }
+    .address-style { border-left: 4px solid #27ae60; }
+    .card-style { border-left: 4px solid #34495e; }
+
+    /* orders */
+    .order-box { border: 1px solid #eee; border-radius: 8px; overflow: hidden; margin-bottom: 20px; }
+    .order-header { background: #f8f9fa; padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
+    .order-status { color: #e67e22; font-weight: bold; background: #fff3e0; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem; }
+    .order-items { padding: 15px; }
+    .order-item-row { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; border-bottom: 1px dashed #eee; padding-bottom: 10px; }
+    .order-item-row img { width: 50px; height: 50px; object-fit: cover; border-radius: 5px; border: 1px solid #eee; }
+    .order-footer { background: #fdfdfd; padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Modals */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; backdrop-filter: blur(5px); }
+    .modal-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; width: 450px; padding: 30px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+    .modal-close { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #999; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: left; }
+    .lbl { font-size: 0.8rem; font-weight: bold; color: #7f8c8d; margin-bottom: 5px; display: block; }
+    .inp { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+</style>
+
+<script>
+    /* Personal Data Management */ 
+    const emailInput = document.getElementById('edit-email'); 
+    const telInput = document.getElementById('edit-tel'); 
+    const passInput = document.getElementById('edit-pass');
+    const btnEnable = document.getElementById('btn-enable-edit'); 
+    const actionButtons = document.getElementById('action-buttons');
+    const msg = document.getElementById('msg-esito'); 
+    let emailOriginale = emailInput.value; let telOriginale = telInput.value;
+
+    function abilitaModifica() {
+        emailInput.disabled = false; telInput.disabled = false; passInput.disabled = false;
+        [emailInput, telInput, passInput].forEach(el => { el.classList.remove('input-locked'); el.classList.add('input-active'); });
+        passInput.placeholder = "Nuova password (opzionale)";
+        btnEnable.style.display = 'none'; actionButtons.style.display = 'flex'; msg.style.display = 'none';
+    }
+
+    function annullaModifica() {
+        emailInput.value = emailOriginale; telInput.value = telOriginale; passInput.value = "";
+        emailInput.disabled = true; telInput.disabled = true; passInput.disabled = true;
+        [emailInput, telInput, passInput].forEach(el => { el.classList.add('input-locked'); el.classList.remove('input-active'); });
+        passInput.placeholder = "********";
+        btnEnable.style.display = 'block'; actionButtons.style.display = 'none';
+    }
+
+    function salvaModifiche() {
+        const email = emailInput.value; const telefono = telInput.value.trim(); const password = passInput.value;
+        if (!email.includes('@')) { alert(" Email non valida."); return; }
+        let telPulito = telefono.replace(/\s+/g, '');
+        if (telPulito.length > 0 && (telPulito.length !== 11 || isNaN(telPulito))) { alert(" Il numero di telefono deve avere 11 cifre!"); return; }
+
+        fetch('/api/aggiorna_account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, telefono: telPulito, password: password }) })
+        .then(res => res.json()).then(data => {
+            if (data.success) { 
+                emailOriginale = email; telOriginale = telPulito;
+                msg.style.backgroundColor = '#d4edda'; msg.style.color = '#155724'; msg.innerHTML = ' Dati aggiornati!'; msg.style.display = 'block'; 
+                setTimeout(() => { annullaModifica(); msg.style.display = 'block'; }, 1000); 
+            } else { msg.style.backgroundColor = '#f8d7da'; msg.style.color = '#721c24'; msg.innerHTML = ' Errore: ' + data.errore; msg.style.display = 'block'; }
+        });
+    }
+
+    /* Address Management */ 
+    function apriModalIndirizzo() { document.getElementById('modal-address').style.display = 'block'; }
+    function chiudiModalIndirizzo() { document.getElementById('modal-address').style.display = 'none'; }
+    
+    function salvaIndirizzo() {
+        const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value.trim() : "";
+        const indirizzo = { nome: getVal('addr-nome'), cognome: getVal('addr-cognome'), via: getVal('addr-via'), civico: getVal('addr-civico'), citta: getVal('addr-citta'), provincia: getVal('addr-prov'), cap: getVal('addr-cap') };
+        for (let key in indirizzo) { if(indirizzo[key] === "") { alert(" Compila tutti i campi!"); return; } }
+        fetch('/api/aggiungi_indirizzo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(indirizzo) })
+        .then(res => res.json()).then(data => { if (data.success) { alert(" Indirizzo aggiunto!"); location.reload(); } else { alert("Errore: " + data.errore); } });
+    }
+    
+    function eliminaIndirizzo(indice) {
+        if(!confirm("Sei sicuro?")) return;
+        fetch('/api/rimuovi_indirizzo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: indice }) })
+        .then(res => res.json()).then(data => { if (data.success) location.reload(); else alert("Errore: " + data.errore); });
+    }
+
+    /* Card Management */
+    function apriModalCarta() { document.getElementById('modal-card').style.display = 'block'; }
+    function chiudiModalCarta() { document.getElementById('modal-card').style.display = 'none'; }
+    
+    function salvaCarta() {
+        const titolare = document.getElementById('card-titolare').value;
+        const numero = document.getElementById('card-numero').value.replace(/\s+/g, '');
+        const scadenza = document.getElementById('card-scadenza').value;
+
+        if(!titolare || !numero || !scadenza) { alert("Compila tutti i campi!"); return; }
+        if (numero.length !== 16 || isNaN(numero)) { alert(" La carta deve avere 16 cifre!"); return; }
+
+        fetch('/api/aggiungi_carta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titolare: titolare, numero: numero, scadenza: scadenza }) })
+        .then(res => res.json()).then(data => { if (data.success) { alert(" Carta aggiunta!"); location.reload(); } else { alert("Errore: " + data.errore); } });
+    }
+    
+    function eliminaCarta(indice) {
+        if(!confirm("Eliminare questa carta?")) return;
+        fetch('/api/rimuovi_carta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ indice: indice }) })
+        .then(res => res.json()).then(data => { if (data.success) location.reload(); else alert("Errore: " + data.errore); });
+    }
+</script>
+{% endblock %}

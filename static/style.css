@@ -1,0 +1,93 @@
+:root {
+    --primary: #3498db;
+    --primary-dark: #2980b9;
+    --secondary: #2c3e50;
+    --accent: #e67e22;
+    --bg-light: #f8f9fa;
+    --text-dark: #333;
+    --radius: 12px;
+    --shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background-color: var(--bg-light); color: var(--text-dark); }
+
+/* HEADER */
+header { background: white; padding: 15px 30px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+.header-content { display: flex; align-items: center; justify-content: space-between; max-width: 1400px; margin: 0 auto; }
+
+/* Logo */
+.logo-area { display: flex; align-items: center; gap: 10px; cursor: pointer; transition: transform 0.2s; }
+.logo-area:hover { transform: scale(1.02); }
+.home-icon { font-size: 1.5rem; color: var(--secondary); background: #eee; padding: 8px; border-radius: 50%; }
+h1 { font-size: 1.4rem; color: var(--secondary); margin: 0; font-weight: 700; letter-spacing: -0.5px; }
+
+/* Search */
+.search-bar { display: flex; background: #f1f3f5; border-radius: 50px; padding: 5px 15px; width: 400px; transition: 0.3s; }
+.search-bar:focus-within { box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2); background: white; }
+.search-bar input { border: none; background: transparent; flex-grow: 1; outline: none; padding: 8px; font-size: 0.95rem; }
+.search-bar button { background: none; border: none; color: #777; cursor: pointer; }
+.search-bar button:hover { color: var(--primary); }
+
+/* Header Buttons & Guests */
+.header-actions { display: flex; align-items: center; gap: 15px; }
+#guest-buttons { display: flex; gap: 10px; } /* I pulsanti sono separati ora */
+
+/* Buttons  */
+.btn-modern { padding: 8px 18px; border-radius: 50px; border: none; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
+.btn-login { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+.btn-login:hover { background: var(--primary); color: white; }
+.btn-register { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3); }
+.btn-register:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+/* HERO */
+.hero { height: 75vh; background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1600'); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; text-align: center; color: white; border-radius: 0 0 30px 30px; margin-bottom: 30px; }
+.hero-text h2 { font-size: 3.5rem; margin-bottom: 10px; font-weight: 800; }
+.cta-btn { background: var(--accent); color: white; padding: 15px 40px; border-radius: 50px; border: none; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.3s; box-shadow: 0 5px 20px rgba(230, 126, 34, 0.4); }
+.cta-btn:hover { transform: translateY(-3px); background: #d35400; }
+
+/* Filters */
+.shop-layout { display: flex; max-width: 1400px; margin: 0 auto; gap: 30px; padding: 20px; }
+.filters-sidebar { width: 260px; background: white; padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow); height: fit-content; }
+.filter-group { margin-bottom: 30px; }
+.filter-group h4 { font-size: 0.9rem; text-transform: uppercase; color: #888; letter-spacing: 1px; margin-bottom: 15px; }
+
+/* Radio Buttons */
+.radio-container { display: block; position: relative; padding-left: 30px; margin-bottom: 12px; cursor: pointer; font-size: 0.95rem; user-select: none; }
+.radio-container input { position: absolute; opacity: 0; cursor: pointer; }
+.checkmark { position: absolute; top: 0; left: 0; height: 18px; width: 18px; background-color: #eee; border-radius: 50%; }
+.radio-container:hover input ~ .checkmark { background-color: #ccc; }
+.radio-container input:checked ~ .checkmark { background-color: var(--primary); }
+
+/* Input Prices */
+.price-inputs { display: flex; align-items: center; gap: 10px; }
+.price-inputs input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+.price-inputs input:focus { border-color: var(--primary); }
+
+/* Products */
+.products-area { flex-grow: 1; }
+.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 25px; }
+.card { background: white; padding: 15px; border-radius: var(--radius); box-shadow: var(--shadow); transition: transform 0.2s; border: 1px solid transparent; display: flex; flex-direction: column; }
+.card:hover { transform: translateY(-5px); border-color: var(--primary); }
+.product-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; }
+.card h3 { font-size: 1.1rem; margin: 0 0 5px 0; }
+.price { color: var(--accent); font-size: 1.2rem; font-weight: bold; }
+.add-btn { background: var(--secondary); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; margin-top: auto; transition: 0.2s; }
+.add-btn:hover { background: #1a252f; }
+.star-icon { color: #ddd; font-size: 1.2rem; cursor: pointer; transition: 0.2s; }
+.star-icon.fas { color: #f1c40f; }
+
+/* Modals & Forms */
+.modal-content { border-radius: 20px; border: none; box-shadow: 0 10px 40px rgba(0,0,0,0.2); padding: 30px; }
+.input-modern { width: 100%; padding: 12px 15px; margin: 8px 0; border: 1px solid #eee; background: #f9f9f9; border-radius: 8px; font-size: 1rem; outline: none; transition: 0.2s; }
+.input-modern:focus { background: white; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+.btn-full-primary { width: 100%; background: var(--primary); color: white; padding: 12px; border-radius: 8px; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 15px; }
+.btn-primary { background: var(--primary); color: white; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+.btn-secondary { background: #eee; color: #333; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; }
+.form-row { display: flex; gap: 15px; }
+
+
+
+/* DROPDOWN */
+.dropdown-content { border-radius: 12px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.15); margin-top: 10px; padding: 10px; }
+.dropdown-content a { border-radius: 6px; margin-bottom: 2px; }
+.logout-link { color: #e74c3c !important; }

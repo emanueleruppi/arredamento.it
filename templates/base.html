@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arredamento Moderno</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        /* Global Variables */ 
+        const UTENTE_LOGGATO = {{ 'true' if session.get('utente_nome') else 'false' }};
+        const E_ADMIN = {{ 'true' if session.get('ruolo') == 'admin' else 'false' }};
+    </script>
+
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; }
+        
+        /* NAVBAR */
+        header { background: white; padding: 15px 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-bottom: 1px solid #eee; }
+        nav { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; }
+        .logo { font-size: 1.5rem; font-weight: 800; text-decoration: none; color: #2c3e50; display: flex; align-items: center; gap: 10px; }
+        .logo i { color: #e67e22; }
+        .nav-links { display: flex; align-items: center; gap: 30px; }
+        .nav-links a { color: #555; text-decoration: none; font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.9rem; text-transform: uppercase; }
+        .nav-links a:hover { color: #e67e22; }
+        .btn-register { background: #2c3e50; color: white !important; padding: 8px 15px; border-radius: 5px; }
+        
+        /* User Greeting Styles */
+        .user-greeting { color: #27ae60 !important; font-weight: bold; border: 1px solid #27ae60; padding: 5px 15px; border-radius: 20px; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .admin-greeting { color: #c0392b !important; border: 1px solid #c0392b; background-color: #fff5f5; }
+        .admin-greeting:hover { background-color: #c0392b; color: white !important; }
+
+        /* Cart Link */
+        .cart-link { display: flex; align-items: center; gap: 10px; color: #2c3e50 !important; font-weight: 700 !important; cursor: pointer; }
+        .icon-wrapper { position: relative; display: inline-block; }
+        .badge { position: absolute; top: -10px; right: -10px; background: #e74c3c; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.75rem; font-weight: bold; min-width: 16px; text-align: center; border: 2px solid white; }
+
+        /* MODALS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; backdrop-filter: blur(5px); }
+        .modal-box { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; width: 400px; padding: 40px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); text-align: center; }
+        .modal-close { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; color: #999; }
+        .form-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; outline: none; }
+        .form-btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; color: white; margin-top: 10px; }
+
+        /* SIDEBAR CARRELLO */
+        #cart-sidebar { position: fixed; top: 0; right: -450px; width: 400px; height: 100vh; background: white; box-shadow: -5px 0 25px rgba(0,0,0,0.15); z-index: 3000; transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; }
+        #cart-sidebar.open { right: 0; }
+        .sidebar-header { padding: 20px; background: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-body { flex: 1; overflow-y: auto; padding: 20px; }
+        .sidebar-footer { padding: 25px; background: #f9f9f9; border-top: 1px solid #eee; }
+        .side-item { display: flex; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; align-items: flex-start; }
+        .side-item img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; }
+        .side-info { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .side-info h4 { margin: 0; color: #333; font-size: 0.95rem; line-height: 1.2; }
+        .side-price-single { color: #7f8c8d; font-size: 0.85rem; }
+        .mini-qty-box { display: flex; align-items: center; border: 1px solid #ddd; border-radius: 4px; width: fit-content; margin-top: 5px; }
+        .mini-btn { background: #f1f1f1; border: none; width: 25px; height: 25px; cursor: pointer; font-weight: bold; color: #555; }
+        .mini-btn:hover { background: #e0e0e0; }
+        .mini-val { padding: 0 8px; font-size: 0.9rem; font-weight: bold; }
+        .side-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+        .side-total-item { font-weight: bold; color: #e67e22; font-size: 1rem; }
+        .btn-delete-item { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        .btn-delete-item:hover { color: #e74c3c; transform: scale(1.1); }
+        .checkout-btn { width: 100%; background: #e67e22; color: white; border: none; padding: 15px; font-size: 1.1rem; font-weight: bold; text-transform: uppercase; cursor: pointer; border-radius: 8px; transition: 0.3s; }
+        .checkout-btn:hover { background: #d35400; }
+        .checkout-btn:disabled { background: #95a5a6; cursor: not-allowed; opacity: 0.7; transform: none !important; }
+        #sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2500; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav>
+            <a href="/" class="logo"><i class="fas fa-couch"></i> ARREDAMENTO.it</a>
+            
+            <div class="nav-links">
+                {% if request.endpoint != 'catalogo' %}
+                    <a href="/catalogo">Catalogo</a>
+                {% endif %}
+                
+                {% if session.get('utente_nome') %}
+                    
+                    {% if session.get('ruolo') == 'admin' %}
+                        <a href="/admin" class="user-greeting admin-greeting" title="Vai alla Dashboard">
+                            <i class="fas fa-user-shield"></i> Ciao Admin, {{ session.utente_nome }}
+                        </a>
+                    {% else %}
+                        <a href="/account" class="user-greeting">
+                            <i class="fas fa-user"></i> Ciao, {{ session.utente_nome }}
+                        </a>
+                    {% endif %}
+
+                {% else %}
+                    <a onclick="apriModal('login')">Login</a>
+                    <a onclick="apriModal('registrati')" class="btn-register">Registrati</a>
+                {% endif %}
+                
+                {% if session.get('ruolo') != 'admin' %}
+                <a onclick="apriCarrelloLaterale()" class="cart-link" title="Apri Carrello">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-shopping-cart fa-lg"></i>
+                        <span id="cart-badge" class="badge" style="display:none;">0</span>
+                    </div>
+                    <span>CARRELLO</span>
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <div id="sidebar-overlay" onclick="chiudiCarrelloLaterale()"></div>
+    <div id="cart-sidebar">
+        <div class="sidebar-header">
+            <h3 style="margin:0;"><i class="fas fa-shopping-cart"></i> Il tuo Carrello</h3>
+            <button onclick="chiudiCarrelloLaterale()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">&times;</button>
+        </div>
+        <div class="sidebar-body" id="sidebar-content"></div>
+        <div class="sidebar-footer">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; color:#7f8c8d;">
+                <span>Pezzi selezionati:</span>
+                <span id="side-qty" style="font-weight:bold; color:#333;">0</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px; font-size:1.3rem; font-weight:bold; color:#2c3e50;">
+                <span>Totale:</span>
+                <span id="side-total">€ 0.00</span>
+            </div>
+            <button id="btn-checkout" onclick="window.location.href='/checkout'" class="checkout-btn">
+                VAI AL CHECKOUT <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="modal-login" class="modal-overlay" onclick="chiudiModal(event)">
+        <div class="modal-box">
+            <span class="modal-close" onclick="forzaChiusura()">&times;</span>
+            <h2>Bentornato </h2>
+            
+            <input type="email" id="log-email" class="form-input" placeholder="La tua Email">
+            <input type="password" id="log-pass" class="form-input" placeholder="Password">
+            
+            <button class="form-btn" style="background:#2c3e50;" onclick="faiLogin()">ACCEDI</button>
+            
+            <p style="margin-top:15px; color:red; display:none;" id="log-error"></p>
+            <p style="margin-top:20px; font-size:0.9rem; color:#777;">Non hai un account? <a onclick="cambiaModal('registrati')" style="color:#e67e22; cursor:pointer; font-weight:bold;">Registrati</a></p>
+        </div>
+    </div>
+
+    <div id="modal-registrati" class="modal-overlay" onclick="chiudiModal(event)">
+        <div class="modal-box">
+            <span class="modal-close" onclick="forzaChiusura()">&times;</span>
+            <h2>Crea Account </h2>
+            
+            <input type="text" id="reg-nome" class="form-input" placeholder="Nome Completo">
+            <input type="email" id="reg-email" class="form-input" placeholder="La tua Email">
+            <input type="password" id="reg-pass" class="form-input" placeholder="Scegli Password">
+            
+            <button class="form-btn" style="background:#27ae60;" onclick="faiRegistrazione()">REGISTRATI</button>
+            
+            <p style="margin-top:15px; color:red; display:none;" id="reg-error"></p>
+            <p style="margin-top:20px; font-size:0.9rem; color:#777;">Hai già un account? <a onclick="cambiaModal('login')" style="color:#2c3e50; cursor:pointer; font-weight:bold;">Accedi</a></p>
+        </div>
+    </div>
+
+    <script>
+        /* Login & Registration Functions */
+        function faiLogin() {
+            const email = document.getElementById('log-email').value;
+            const pass = document.getElementById('log-pass').value;
+
+            if(!email || !pass) {
+                alert("Inserisci email e password!");
+                return;
+            }
+
+            fetch('/api/login', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ email: email, password: pass }) 
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) { 
+                    location.reload(); 
+                } else { 
+                    document.getElementById('log-error').innerText = data.errore; 
+                    document.getElementById('log-error').style.display = 'block'; 
+                }
+            })
+            .catch(err => alert("Errore di connessione: " + err));
+        }
+
+        function faiRegistrazione() {
+            const nome = document.getElementById('reg-nome').value; 
+            const email = document.getElementById('reg-email').value; 
+            const pass = document.getElementById('reg-pass').value;
+            
+            if (!email.includes('@')) { alert("Email non valida!"); return; }
+            if (!nome || !pass) { alert("Compila tutti i campi!"); return; }
+
+            fetch('/api/registra', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ nome: nome, email: email, password: pass }) 
+            })
+            .then(res => res.json())
+            .then(data => { 
+                if (data.success) { 
+                    alert("Registrazione completata! Ora puoi accedere."); 
+                    location.reload(); 
+                } else { 
+                    document.getElementById('reg-error').innerText = data.errore; 
+                    document.getElementById('reg-error').style.display = 'block'; 
+                } 
+            })
+            .catch(err => alert("Errore di connessione: " + err));
+        }
+
+        /* Modal Management */ 
+        function apriModal(tipo) { document.getElementById('modal-' + tipo).style.display = 'block'; }
+        function forzaChiusura() { document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none'); }
+        function chiudiModal(event) { if (event.target.classList.contains('modal-overlay')) event.target.style.display = 'none'; }
+        function cambiaModal(tipo) { forzaChiusura(); apriModal(tipo); }
+
+        /* sidebar */
+        function apriCarrelloLaterale() { document.getElementById('cart-sidebar').classList.add('open'); document.getElementById('sidebar-overlay').style.display = 'block'; renderizzaSidebar(); }
+        function chiudiCarrelloLaterale() { document.getElementById('cart-sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').style.display = 'none'; }
+        
+        function renderizzaSidebar() {
+            let carrello = JSON.parse(localStorage.getItem('carrello')) || [];
+            const container = document.getElementById('sidebar-content');
+            const qtyDisplay = document.getElementById('side-qty');
+            const totalDisplay = document.getElementById('side-total');
+            const btnCheckout = document.getElementById('btn-checkout');
+
+            container.innerHTML = '';
+            let totalePrezzo = 0; let totalePezzi = 0; let attivo = false;
+
+            if (carrello.length === 0) {
+                container.innerHTML = '<p style="text-align:center; margin-top:50px; color:#999;">Il carrello è vuoto </p>';
+                qtyDisplay.innerText = 0; totalDisplay.innerText = '€ 0.00'; btnCheckout.disabled = true; return;
+            }
+
+            carrello.forEach((item, index) => {
+                if(item.selected === undefined) item.selected = true;
+                if(item.selected) { totalePrezzo += item.prezzo * item.quantita; totalePezzi += item.quantita; attivo = true; }
+                
+                let html = `
+                    <div class="side-item" style="${item.selected ? '' : 'opacity: 0.5;'}">
+                        <div style="margin-right: 10px; display: flex; align-items: center;">
+                            <input type="checkbox" onchange="toggleSelezione(${index})" ${item.selected ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+                        </div>
+                        <img src="${item.immagine}" alt="foto">
+                        <div class="side-info">
+                            <h4>${item.nome}</h4>
+                            <span class="side-price-single">€ ${item.prezzo}</span>
+                            <div class="mini-qty-box">
+                                <button class="mini-btn" onclick="modificaQtySidebar(${index}, -1)">-</button>
+                                <span class="mini-val">${item.quantita}</span>
+                                <button class="mini-btn" onclick="modificaQtySidebar(${index}, 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="side-actions">
+                            <span class="side-total-item">€ ${(item.prezzo * item.quantita).toFixed(2)}</span>
+                            <button class="btn-delete-item" onclick="rimuoviDaSidebar(${index})"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>`;
+                container.innerHTML += html;
+            });
+
+            qtyDisplay.innerText = totalePezzi; totalDisplay.innerText = '€ ' + totalePrezzo.toFixed(2); btnCheckout.disabled = !attivo;
+            localStorage.setItem('carrello', JSON.stringify(carrello)); aggiornaBadge();
+        }
+
+        function toggleSelezione(i) { let c = JSON.parse(localStorage.getItem('carrello')); c[i].selected = !c[i].selected; localStorage.setItem('carrello', JSON.stringify(c)); renderizzaSidebar(); }
+        function modificaQtySidebar(i, v) { let c = JSON.parse(localStorage.getItem('carrello')); c[i].quantita += v; if(c[i].quantita < 1) c[i].quantita = 1; localStorage.setItem('carrello', JSON.stringify(c)); renderizzaSidebar(); }
+        function rimuoviDaSidebar(i) { let c = JSON.parse(localStorage.getItem('carrello')); c.splice(i, 1); localStorage.setItem('carrello', JSON.stringify(c)); renderizzaSidebar(); }
+        
+        function aggiornaBadge() { let c = JSON.parse(localStorage.getItem('carrello')) || []; let t = c.reduce((a, i) => a + i.quantita, 0); const b = document.getElementById('cart-badge'); if(b) { b.innerText = t; b.style.display = t > 0 ? 'inline-block' : 'none'; } }
+        document.addEventListener("DOMContentLoaded", aggiornaBadge);
+    </script>
+</body>
+</html>

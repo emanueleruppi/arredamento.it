@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 40px auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; gap: 40px; align-items: flex-start; flex-wrap: wrap;">
+    
+    <div style="flex: 1; min-width: 300px;">
+        <img src="{{ p.immagine }}" alt="{{ p.nome }}" style="width: 100%; border-radius: 12px; object-fit: cover; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+    </div>
+
+    <div style="flex: 1; min-width: 300px;">
+        
+        <span style="background: #f0f2f5; color: #7f8c8d; padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; font-weight: bold; text-transform: uppercase;">
+            {{ p.categoria }}
+        </span>
+        
+        <h1 style="margin: 15px 0; font-size: 2.5rem; color: #2c3e50; line-height: 1.2;">
+            {{ p.nome }}
+        </h1>
+
+        <div style="background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <i class="fas fa-ruler-combined" style="color: #2c3e50; width: 20px; text-align: center;"></i>
+                <span style="font-size: 0.95rem; color: #555;"><strong>Misure:</strong> {{ p.misure }}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-layer-group" style="color: #2c3e50; width: 20px; text-align: center;"></i>
+                <span style="font-size: 0.95rem; color: #555;"><strong>Materiali:</strong> {{ p.materiali }}</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px; font-size: 2.2rem; color: #e67e22; font-weight: 800;">
+            € {{ p.prezzo }}
+        </div>
+
+        <p style="color: #666; line-height: 1.6; font-size: 1.1rem; margin-bottom: 30px;">
+            {{ p.descrizione }}
+        </p>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 30px;">
+
+        {% if session.get('ruolo') != 'admin' %}
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                <label style="font-weight: bold; color: #555;">Quantità:</label>
+                <div style="display: flex; border: 1px solid #ddd; border-radius: 5px;">
+                    <button onclick="cambiaQty(-1)" style="padding: 10px 15px; background: #f9f9f9; border: none; cursor: pointer; font-weight: bold;">-</button>
+                    <input type="text" id="qty" value="1" readonly style="width: 40px; text-align: center; border: none; font-weight: bold;">
+                    <button onclick="cambiaQty(1)" style="padding: 10px 15px; background: #f9f9f9; border: none; cursor: pointer; font-weight: bold;">+</button>
+                </div>
+            </div>
+
+            <button onclick="aggiungiQuesto()" style="background: #27ae60; color: white; border: none; padding: 18px 30px; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);">
+                <i class="fas fa-cart-plus"></i> AGGIUNGI AL CARRELLO
+            </button>
+        {% else %}
+            <div style="background: #eafbea; border: 1px solid #27ae60; color: #27ae60; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold;">
+                <i class="fas fa-eye"></i> Visualizzazione Admin (Acquisto disabilitato)
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+    function cambiaQty(n) {
+        let input = document.getElementById('qty');
+        let val = parseInt(input.value) + n;
+        if (val < 1) val = 1;
+        input.value = val;
+    }
+
+    function aggiungiQuesto() {
+        if (!UTENTE_LOGGATO) { apriModal('registrati'); return; }
+
+        let id = "{{ p._id }}"; let nome = "{{ p.nome }}"; let prezzo = parseFloat("{{ p.prezzo }}"); let img = "{{ p.immagine }}"; let quantita = parseInt(document.getElementById('qty').value);
+        let carrello = JSON.parse(localStorage.getItem('carrello')) || [];
+        let trovato = carrello.find(item => item.id === id);
+
+        if (trovato) { trovato.quantita += quantita; } else { carrello.push({ id: id, nome: nome, prezzo: prezzo, immagine: img, quantita: quantita, selected: true }); }
+
+        localStorage.setItem('carrello', JSON.stringify(carrello));
+        alert("Prodotto aggiunto al carrello! 🛒");
+        if (typeof aggiornaBadge === "function") { aggiornaBadge(); }
+        apriCarrelloLaterale();
+    }
+</script>
+{% endblock %}

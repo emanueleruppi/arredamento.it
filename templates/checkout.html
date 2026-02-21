@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="background: #f8f9fa; min-height: 100vh; padding: 40px 20px;">
+    
+    <div style="max-width: 1100px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 40px;">
+
+        <div style="flex: 2; min-width: 350px;">
+            
+            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 30px;">
+                <h3 style="color: #2c3e50; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <i class="fas fa-map-marker-alt" style="color:#e67e22;"></i> 1. Scegli Indirizzo
+                </h3>
+                
+                <div id="lista-indirizzi">
+                    {% if u.indirizzi and u.indirizzi|length > 0 %}
+                        {% for indirizzo in u.indirizzi %}
+                        <label class="selection-box" onclick="selezionaIndirizzo(this, {{ loop.index0 }})">
+                            <input type="radio" name="indirizzo_scelto" value="{{ loop.index0 }}">
+                            <div class="selection-content">
+                                <strong>{{ indirizzo.nome }} {{ indirizzo.cognome }}</strong>
+                                <span style="font-size: 0.9rem; color: #555;">
+                                    {{ indirizzo.via }} {{ indirizzo.civico }}, {{ indirizzo.citta }}
+                                </span>
+                            </div>
+                            <i class="fas fa-check-circle check-icon"></i>
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; color: #777; padding: 20px;">
+                            <p>Non hai indirizzi salvati.</p>
+                            <a href="/account" style="color: #27ae60; font-weight: bold;">Vai al Profilo per aggiungerne uno</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05);">
+                <h3 style="color: #2c3e50; margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <i class="fas fa-wallet" style="color:#e67e22;"></i> 2. Metodo di Pagamento
+                </h3>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
+                    
+                    <label class="payment-option selected" onclick="cambiaMetodo('carta', this)">
+                        <i class="fas fa-credit-card fa-2x"></i> <span>Carta</span>
+                    </label>
+                    
+                    <label class="payment-option" onclick="cambiaMetodo('cash', this)">
+                        <i class="fas fa-money-bill-wave fa-2x"></i> <span>Contanti</span>
+                    </label>
+
+                </div>
+
+                <div id="box-carte">
+                    <h4 style="margin: 0 0 15px 0; color: #555;">Seleziona la tua carta:</h4>
+                    
+                    {% if u.metodi_pagamento and u.metodi_pagamento|length > 0 %}
+                        {% for carta in u.metodi_pagamento %}
+                        <label class="selection-box" onclick="selezionaCarta(this, {{ loop.index0 }})">
+                            <input type="radio" name="carta_scelta" value="{{ loop.index0 }}">
+                            <div class="selection-content" style="display: flex; align-items: center; gap: 15px;">
+                                {% if carta.numero.startswith('4') %}
+                                    <i class="fab fa-cc-visa fa-2x" style="color: #1a1f71;"></i>
+                                {% else %}
+                                    <i class="far fa-credit-card fa-2x" style="color: #555;"></i>
+                                {% endif %}
+                                <div>
+                                    <strong style="display: block;">•••• {{ carta.numero[-4:] }}</strong>
+                                    <span style="font-size: 0.8rem; color: #777;">{{ carta.titolare }}</span>
+                                </div>
+                            </div>
+                            <i class="fas fa-check-circle check-icon"></i>
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; color: #777; padding: 20px; border: 1px dashed #ccc;">
+                            <p>Nessuna carta salvata.</p>
+                            <a href="/account" style="color: #27ae60;">Aggiungi carta nel Profilo</a>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div id="box-cash" style="display: none; padding: 20px; background: #e8f5e9; border-radius: 8px; color: #1b5e20;">
+                    <i class="fas fa-box-open"></i> Pagamento alla consegna (Contrassegno).
+                </div>
+
+            </div>
+        </div>
+
+        <div style="flex: 1; min-width: 300px;">
+            <div style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); position: sticky; top: 100px;">
+                <h3 style="color: #2c3e50; margin-top: 0; margin-bottom: 20px;">Riepilogo Ordine</h3>
+                <div id="lista-checkout" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: bold; color: #2c3e50; margin-bottom: 30px;">
+                    <span>Totale</span>
+                    <span id="check-totale">€ 0.00</span>
+                </div>
+                
+                <button onclick="concludiOrdine()" class="btn-pay" id="btn-paga">
+                    CONFERMA E PAGA
+                </button>
+                
+                <p style="text-align: center; color: #999; font-size: 0.8rem; margin-top: 15px;">
+                    <i class="fas fa-lock"></i> Pagamenti sicuri SSL
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .selection-box { display: flex; align-items: center; justify-content: space-between; padding: 15px; border: 2px solid #eee; border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; }
+    .selection-box:hover { border-color: #ccc; }
+    .selection-box.active { border-color: #27ae60; background-color: #f0fdf4; }
+    .selection-box input[type="radio"] { display: none; }
+    .check-icon { font-size: 1.2rem; color: #eee; }
+    .selection-box.active .check-icon { color: #27ae60; }
+    .payment-option { flex: 1; border: 2px solid #eee; border-radius: 8px; padding: 15px; text-align: center; cursor: pointer; transition: 0.2s; color: #7f8c8d; }
+    .payment-option.selected { border-color: #2c3e50; background: #f0f4f8; color: #2c3e50; font-weight: bold; }
+    .btn-pay { width: 100%; background: #27ae60; color: white; padding: 18px; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .btn-pay:hover { background: #219150; }
+    .checkout-item { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+    .checkout-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid #eee; }
+</style>
+
+<script>
+    let metodoScelto = 'carta';
+    let indirizzoIndex = null;
+    let cartaIndex = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        caricaRiepilogo();
+    });
+
+    function selezionaIndirizzo(elemento, indice) {
+        document.querySelectorAll('#lista-indirizzi .selection-box').forEach(el => el.classList.remove('active'));
+        elemento.classList.add('active');
+        indirizzoIndex = indice;
+    }
+
+    function selezionaCarta(elemento, indice) {
+        document.querySelectorAll('#box-carte .selection-box').forEach(el => el.classList.remove('active'));
+        elemento.classList.add('active');
+        cartaIndex = indice;
+    }
+
+    /* Cash & Card Manager */
+    function cambiaMetodo(metodo, elemento) {
+        metodoScelto = metodo;
+        document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+        elemento.classList.add('selected');
+
+        document.getElementById('box-carte').style.display = 'none';
+        document.getElementById('box-cash').style.display = 'none';
+
+        if (metodo === 'carta') document.getElementById('box-carte').style.display = 'block';
+        if (metodo === 'cash') document.getElementById('box-cash').style.display = 'block';
+    }
+
+    function caricaRiepilogo() {
+        let carrelloCompleto = JSON.parse(localStorage.getItem('carrello')) || [];
+        let carrelloAttivo = carrelloCompleto.filter(item => item.selected === true);
+
+        const container = document.getElementById('lista-checkout');
+        const totDisplay = document.getElementById('check-totale');
+        const btnPaga = document.getElementById('btn-paga');
+        
+        if (carrelloAttivo.length === 0) {
+            container.innerHTML = "<p style='text-align:center; color:#999;'>Nessun articolo selezionato.</p>";
+            btnPaga.disabled = true;
+            btnPaga.style.background = "#ccc";
+            totDisplay.innerText = '€ 0.00';
+            return;
+        } else {
+            btnPaga.disabled = false;
+            btnPaga.style.background = "#27ae60";
+        }
+
+        let totale = 0;
+        container.innerHTML = '';
+        carrelloAttivo.forEach(item => {
+            let parziale = item.prezzo * item.quantita;
+            totale += parziale;
+            container.innerHTML += `
+                <div class="checkout-item">
+                    <img src="${item.immagine}" alt="foto">
+                    <div style="flex:1;">
+                        <h4 style="margin:0; font-size:0.9rem;">${item.nome}</h4>
+                        <span style="font-size:0.8rem; color:#777;">x${item.quantita}</span>
+                    </div>
+                    <div style="font-weight:bold;">€ ${parziale.toFixed(2)}</div>
+                </div>`;
+        });
+        totDisplay.innerText = '€ ' + totale.toFixed(2);
+    }
+
+    function concludiOrdine() {
+        if (indirizzoIndex === null) { alert(" Seleziona un indirizzo!"); return; }
+        if (metodoScelto === 'carta' && cartaIndex === null) { alert(" Seleziona una carta!"); return; }
+        if(!confirm("Confermi l'ordine?")) return;
+
+        let carrelloCompleto = JSON.parse(localStorage.getItem('carrello')) || [];
+        let prodottiDaComprare = carrelloCompleto.filter(item => item.selected === true);
+        let prodottiRimasti = carrelloCompleto.filter(item => item.selected === false);
+
+        let totale = prodottiDaComprare.reduce((acc, item) => acc + (item.prezzo * item.quantita), 0);
+
+        let datiOrdine = {
+            prodotti: prodottiDaComprare,
+            totale: totale,
+            indirizzo: "Indirizzo salvato #" + (parseInt(indirizzoIndex) + 1),
+            metodo: metodoScelto
+        };
+
+        fetch('/api/salva_ordine', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datiOrdine)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(" Ordine inviato!");
+                if (prodottiRimasti.length > 0) {
+                    localStorage.setItem('carrello', JSON.stringify(prodottiRimasti));
+                } else {
+                    localStorage.removeItem('carrello');
+                }
+                window.location.href = '/account';
+            } else {
+                alert("Errore: " + data.errore);
+            }
+        });
+    }
+</script>
+
+{% endblock %}

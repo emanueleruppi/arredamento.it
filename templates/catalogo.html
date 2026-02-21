@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 20px; display: flex; gap: 30px;">
+
+    <div style="width: 250px; flex-shrink: 0; background: white; padding: 20px; border-radius: 12px; height: fit-content; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0; color: #2c3e50;">Filtra Prodotti</h3>
+        
+        <form action="/catalogo" method="get">
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Cerca</label>
+                <div style="position: relative;">
+                    <i class="fas fa-search" style="position: absolute; left: 10px; top: 10px; color: #999;"></i>
+                    <input type="text" name="q" value="{{ q or '' }}" placeholder="Es. Tavolo..." 
+                           style="width: 100%; padding: 8px 8px 8px 35px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Categoria</label>
+                <select name="categoria" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                    <option value="Tutte">Tutte le categorie</option>
+                    <option value="Cucina" {% if cat_selezionata == 'Cucina' %}selected{% endif %}>Cucina</option>
+                    <option value="Soggiorno" {% if cat_selezionata == 'Soggiorno' %}selected{% endif %}>Soggiorno</option>
+                    <option value="Camera" {% if cat_selezionata == 'Camera' %}selected{% endif %}>Camera da Letto</option>
+                    <option value="Bagno" {% if cat_selezionata == 'Bagno' %}selected{% endif %}>Bagno</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Prezzo</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="number" name="min_prezzo" placeholder="Min" value="{{ min_p }}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="number" name="max_prezzo" placeholder="Max" value="{{ max_p }}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                </div>
+            </div>
+
+            <button type="submit" style="width: 100%; background: #2c3e50; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                CERCA E FILTRA
+            </button>
+            <a href="/catalogo" style="display: block; text-align: center; margin-top: 10px; color: #777; text-decoration: none; font-size: 0.9rem;">Resetta tutto</a>
+        </form>
+    </div>
+
+    <div style="flex: 1;">
+        <h2 style="margin-top: 0; margin-bottom: 20px; color: #2c3e50;">I nostri prodotti</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 25px;">
+            {% for prodotto in prodotti %}
+            <div class="product-card">
+                <a href="/prodotto/{{ prodotto._id }}" style="text-decoration: none; color: inherit;">
+                    <img src="{{ prodotto.immagine }}" alt="{{ prodotto.nome }}">
+                    <div class="p-info">
+                        <span class="p-cat">{{ prodotto.categoria }}</span>
+                        <h3>{{ prodotto.nome }}</h3>
+                        <div class="p-price">€ {{ prodotto.prezzo }}</div>
+                        {% if prodotto.misure %}
+                        <p style="font-size: 0.8rem; color: #777; margin: 5px 0;"><i class="fas fa-ruler-combined"></i> {{ prodotto.misure }}</p>
+                        {% endif %}
+                    </div>
+                </a>
+                
+                {% if session.get('ruolo') != 'admin' %}
+                    <button onclick="aggiungiAlCarrello('{{ prodotto._id }}', '{{ prodotto.nome }}', {{ prodotto.prezzo }}, '{{ prodotto.immagine }}')" class="btn-add">
+                        AGGIUNGI AL CARRELLO
+                    </button>
+                {% endif %}
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; display: flex; flex-direction: column; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .product-card img { width: 100%; height: 200px; object-fit: cover; }
+    .p-info { padding: 15px; flex: 1; }
+    .p-cat { font-size: 0.8rem; color: #999; text-transform: uppercase; font-weight: bold; }
+    .p-info h3 { margin: 5px 0; font-size: 1.1rem; color: #333; }
+    .p-price { font-size: 1.2rem; font-weight: bold; color: #e67e22; margin-top: 10px; }
+    .btn-add { width: 100%; background: #27ae60; color: white; border: none; padding: 15px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: auto; }
+    .btn-add:hover { background: #219150; }
+</style>
+
+<script>
+    function aggiungiAlCarrello(id, nome, prezzo, img) {
+        if (!UTENTE_LOGGATO) { apriModal('registrati'); return; }
+        let carrello = JSON.parse(localStorage.getItem('carrello')) || [];
+        let trovato = carrello.find(p => p.id === id);
+        if (trovato) { trovato.quantita += 1; } else { carrello.push({ id: id, nome: nome, prezzo: prezzo, immagine: img, quantita: 1, selected: true }); }
+        localStorage.setItem('carrello', JSON.stringify(carrello));
+        alert("Prodotto aggiunto al carrello!");
+        if (typeof aggiornaBadge === "function") aggiornaBadge();
+        if (document.getElementById('cart-sidebar').classList.contains('open')) renderizzaSidebar();
+    }
+</script>
+{% endblock %}

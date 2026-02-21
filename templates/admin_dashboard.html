@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="background-color: #f4f6f9; min-height: 100vh; padding-bottom: 50px;">
+
+    <div style="background: #2c3e50; color: white; padding: 30px 0 80px 0;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1 style="margin: 0; font-size: 2.2rem;">Pannello di Controllo</h1>
+                <p style="color: #bdc3c7; margin-top: 5px; margin-bottom: 0;">Benvenuto Admin, Marco</p>
+            </div>
+            <a href="/logout" class="btn-logout">
+                <i class="fas fa-power-off"></i> LOGOUT
+            </a>
+        </div>
+    </div>
+
+    <div style="max-width: 1200px; margin: -50px auto 0 auto; padding: 0 20px;">
+        
+        <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+            <button class="tab-btn active" onclick="apriTab('dashboard', this)">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </button>
+            <button class="tab-btn" onclick="apriTab('prodotti', this)">
+                <i class="fas fa-box"></i> Prodotti
+            </button>
+            <button class="tab-btn" onclick="apriTab('ordini', this)">
+                <i class="fas fa-truck"></i> Ordini
+            </button>
+        </div>
+
+        <div id="tab-dashboard" class="tab-content active">
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <div class="stat-card">
+                    <div class="icon-box" style="background: #e8f5e9; color: #27ae60;"><i class="fas fa-wallet"></i></div>
+                    <div><h3>€ {{ "%.2f"|format(stats.incassi) }}</h3><span>Totale Incassi</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-box" style="background: #ffebee; color: #c0392b;"><i class="fas fa-truck"></i></div>
+                    <div><h3 style="color: #c0392b;">- € {{ "%.2f"|format(stats.spese_sped) }}</h3><span>Spese Spedizione</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon-box" style="background: #e3f2fd; color: #2980b9;"><i class="fas fa-shopping-bag"></i></div>
+                    <div><h3>{{ stats.ordini }}</h3><span>Ordini Totali</span></div>
+                </div>
+                <div class="stat-card highlight-card">
+                    <div class="icon-box" style="background: white; color: #2c3e50;"><i class="fas fa-piggy-bank"></i></div>
+                    <div><h3 style="color: white;">€ {{ "%.2f"|format(stats.netto) }}</h3><span style="color: #ecf0f1;">Utile Netto</span></div>
+                </div>
+            </div>
+
+            <div class="modern-panel">
+                <div class="panel-header-simple">
+                    <h3><i class="fas fa-chart-bar"></i> Performance per Categoria</h3>
+                </div>
+                
+                <div class="category-grid">
+                    {% for cat in cat_stats %}
+                    <div class="cat-stat-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: #2c3e50;">{{ cat.nome }}</h4>
+                            <span class="badge-cat">{{ cat.pezzi }} venduti</span>
+                        </div>
+                        
+                        <div class="stat-row">
+                            <span class="label">Incassi</span>
+                            <div class="progress-bg"><div class="progress-fill revenue" style="width: {{ (cat.incassi / stats.incassi * 100) if stats.incassi > 0 else 0 }}%;"></div></div>
+                            <span class="value">€ {{ "%.0f"|format(cat.incassi) }}</span>
+                        </div>
+
+                        <div class="stat-row">
+                            <span class="label">Spese</span>
+                            <div class="progress-bg"><div class="progress-fill expense" style="width: {{ (cat.spese / (cat.incassi+1) * 100) }}%;"></div></div>
+                            <span class="value text-red">-€ {{ "%.0f"|format(cat.spese) }}</span>
+                        </div>
+
+                        <div class="stat-row total">
+                            <span class="label">Utile Netto</span>
+                            <span class="value text-green">€ {{ "%.2f"|format(cat.utile) }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-prodotti" class="tab-content">
+            <div class="action-header">
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-prod" onkeyup="filtraTabella()" placeholder="Cerca prodotto...">
+                </div>
+                <select id="filter-cat" onchange="filtraTabella()" class="modern-select">
+                    <option value="Tutte">Tutte le Categorie</option>
+                    <option value="Soggiorno">Soggiorno</option>
+                    <option value="Cucina">Cucina</option>
+                    <option value="Camera">Camera</option>
+                    <option value="Bagno">Bagno</option>
+                </select>
+                <button onclick="apriModalNuovo()" class="btn-new">
+                    <i class="fas fa-plus"></i> NUOVO
+                </button>
+            </div>
+
+            <div class="modern-table-container">
+                <table id="table-prodotti" class="modern-table">
+                    <thead>
+                        <tr>
+                            <th width="80">Preview</th>
+                            <th>Dettagli Prodotto</th>
+                            <th>Prezzo</th>
+                            <th>Stato</th>
+                            <th class="text-right">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in prodotti %}
+                        <tr class="prod-row" data-cat="{{ p.categoria }}">
+                            <td>
+                                <div class="img-wrapper">
+                                    <img src="{{ p.immagine }}" alt="img">
+                                </div>
+                            </td>
+                            <td>
+                                <div class="prod-name">{{ p.nome }}</div>
+                                <div class="prod-sub">{{ p.categoria }}</div>
+                            </td>
+                            <td class="prod-price">€ {{ p.prezzo }}</td>
+                            <td><span class="status-active">Attivo</span></td>
+                            <td class="text-right">
+                                <button class="action-btn edit" onclick='apriModalModifica({{ p|tojson }})' title="Modifica">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <button class="action-btn delete" onclick="eliminaProdotto('{{ p._id }}')" title="Elimina">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p id="no-results" style="display:none; text-align:center; padding: 40px; color: #999;">Nessun prodotto trovato.</p>
+            </div>
+        </div>
+
+        <div id="tab-ordini" class="tab-content">
+            <div class="modern-panel">
+                <table class="modern-table">
+                    <thead><tr><th>Data</th><th>Cliente</th><th>Prodotti</th><th>Totale</th><th>Spese Sped.</th></tr></thead>
+                    <tbody>
+                        {% for o in ordini %}
+                        <tr>
+                            <td>
+                                <div style="font-weight:bold; color:#2c3e50;">{{ o.data_ordine.strftime('%d/%m/%Y') }}</div>
+                                <div style="font-size:0.85rem; color:#999;">{{ o.data_ordine.strftime('%H:%M') }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;">{{ o.utente }}</div>
+                                <div style="font-size:0.85rem; color:#777;">{{ o.metodo }}</div>
+                            </td>
+                            <td>
+                                <div class="order-items">
+                                    {% for item in o.prodotti %}
+                                    <span>{{ item.quantita }}x {{ item.nome }}</span>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td style="font-weight:800; color:#2c3e50;">€ {{ "%.2f"|format(o.totale) }}</td>
+                            <td><span class="expense-tag">- € 15.00</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="modal-edit" class="modal-overlay">
+    <div class="modal-box modern-modal">
+        <div class="modal-header-modern" style="position: relative; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin:0;">Modifica Prodotto</h3>
+            <button type="button" class="btn-close-modern" onclick="document.getElementById('modal-edit').style.display='none'" style="cursor: pointer; z-index: 1000;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="form-edit">
+            <input type="hidden" name="id" id="edit-id">
+            <div class="modal-grid">
+                <div>
+                    <label class="form-label">Immagine</label>
+                    <div class="image-upload-container">
+                        <img id="edit-img-preview" src="" alt="Anteprima" class="current-image-preview">
+                        <input type="file" name="immagine" id="edit-file-input" class="file-input-hidden" accept="image/*" onchange="previewNuovaImmagine(event)">
+                        <div class="upload-btn-fake"><i class="fas fa-cloud-upload-alt"></i> Cambia foto</div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div><label class="form-label">Nome Prodotto</label><input type="text" name="nome" id="edit-nome" class="modern-input"></div>
+                    <div class="form-row-2">
+                        <div><label class="form-label">Prezzo (€)</label><input type="number" name="prezzo" id="edit-prezzo" step="0.01" class="modern-input"></div>
+                        <div><label class="form-label">Categoria</label><select name="categoria" id="edit-cat" class="modern-input form-select"><option value="Soggiorno">Soggiorno</option><option value="Cucina">Cucina</option><option value="Camera">Camera</option><option value="Bagno">Bagno</option></select></div>
+                    </div>
+                    <div class="form-row-2">
+                         <div><label class="form-label">Misure</label><input type="text" name="misure" id="edit-misure" class="modern-input"></div>
+                         <div><label class="form-label">Materiali</label><input type="text" name="materiali" id="edit-materiali" class="modern-input"></div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 10px;"><label class="form-label">Descrizione</label><textarea name="descrizione" id="edit-desc" class="modern-input" rows="3"></textarea></div>
+            <div class="modal-footer-modern"><button type="button" onclick="inviaProdotto('edit')" class="form-btn save-btn-modern"><i class="fas fa-save"></i> SALVA MODIFICHE</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="modal-new" class="modal-overlay">
+    <div class="modal-box modern-modal">
+        <div class="modal-header-modern" style="display:flex; justify-content:space-between;">
+            <h3 style="margin:0;">Nuovo Prodotto</h3>
+            <button type="button" class="btn-close-modern" onclick="document.getElementById('modal-new').style.display='none'"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="form-new">
+            <div class="modal-grid">
+                <div>
+                    <label class="form-label">Carica Immagine</label>
+                    <input type="file" name="immagine" class="modern-input" accept="image/*" required>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:15px;">
+                    <input type="text" name="nome" class="modern-input" placeholder="Nome Prodotto" required>
+                    <div class="form-row-2">
+                        <input type="number" name="prezzo" step="0.01" class="modern-input" placeholder="Prezzo (€)" required>
+                        <select name="categoria" class="modern-input form-select"><option value="Soggiorno">Soggiorno</option><option value="Cucina">Cucina</option><option value="Camera">Camera</option><option value="Bagno">Bagno</option></select>
+                    </div>
+                    <input type="text" name="misure" class="modern-input" placeholder="Misure">
+                    <input type="text" name="materiali" class="modern-input" placeholder="Materiali">
+                </div>
+            </div>
+            <div style="margin-top:10px;"><textarea name="descrizione" class="modern-input" rows="3" placeholder="Descrizione..."></textarea></div>
+            <div class="modal-footer-modern"><button type="button" onclick="inviaProdotto('new')" class="form-btn save-btn-modern" style="background:#27ae60;">CREA PRODOTTO</button></div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* Layout Styles & Tabs */
+    .btn-logout { background: rgba(255,255,255,0.1); color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; transition: 0.3s; border: 1px solid rgba(255,255,255,0.2); }
+    .btn-logout:hover { background: #c0392b; border-color: #c0392b; }
+
+    .tab-btn { background: white; border: none; padding: 15px 30px; font-size: 1rem; cursor: pointer; border-radius: 50px; font-weight: 600; color: #7f8c8d; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .tab-btn.active { background: #2c3e50; color: white; transform: translateY(-3px); box-shadow: 0 8px 15px rgba(44, 62, 80, 0.3); }
+    .tab-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* DASHBOARD CARDS & STATS */
+    .stat-card { background: white; padding: 25px; border-radius: 12px; display: flex; align-items: center; gap: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: 0.3s; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .highlight-card { background: #27ae60; color: white; border: none; }
+    .icon-box { width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+
+    /* Category Grid Stats */
+    .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; padding: 20px; }
+    .cat-stat-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 4px solid #3498db; }
+    .cat-stat-box:nth-child(2) { border-color: #e67e22; }
+    .cat-stat-box:nth-child(3) { border-color: #9b59b6; }
+    .cat-stat-box:nth-child(4) { border-color: #2ecc71; }
+    
+    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.9rem; }
+    .stat-row.total { border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; font-weight: bold; font-size: 1rem; }
+    .progress-bg { flex: 1; height: 6px; background: #ecf0f1; border-radius: 3px; margin: 0 10px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; }
+    .progress-fill.revenue { background: #3498db; }
+    .progress-fill.expense { background: #e74c3c; }
+    .text-red { color: #e74c3c; } .text-green { color: #27ae60; }
+    .badge-cat { background: #f1f2f6; color: #555; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; }
+
+    /* Product List */
+    .action-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
+    .search-wrapper { flex: 1; background: white; padding: 0 15px; border-radius: 50px; display: flex; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); height: 50px; }
+    .search-wrapper input { border: none; outline: none; width: 100%; padding: 10px; font-size: 1rem; }
+    .modern-select { height: 50px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-radius: 50px; padding: 0 20px; font-size: 1rem; color: #555; cursor: pointer; }
+    .btn-new { background: #2c3e50; color: white; height: 50px; padding: 0 30px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.3s; }
+    .btn-new:hover { background: #34495e; transform: scale(1.05); }
+
+    .modern-table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+    .modern-table th { text-align: left; padding: 0 20px; color: #95a5a6; font-size: 0.85rem; text-transform: uppercase; font-weight: 600; }
+    .prod-row { background: white; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+    .prod-row:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+    .prod-row td { padding: 15px 20px; vertical-align: middle; }
+    .prod-row td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .prod-row td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; text-align: right; }
+    
+    .img-wrapper img { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; border: 2px solid #f1f2f6; }
+    .prod-name { font-weight: bold; color: #2c3e50; font-size: 1rem; margin-bottom: 3px; }
+    .prod-sub { font-size: 0.85rem; color: #95a5a6; }
+    .prod-price { font-weight: 800; color: #2c3e50; }
+    .status-active { background: #e8f5e9; color: #27ae60; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+    .expense-tag { background: #ffebee; color: #c0392b; padding: 5px 10px; border-radius: 6px; font-weight: bold; font-size: 0.9rem; }
+
+    .action-btn { width: 35px; height: 35px; border-radius: 50%; border: none; cursor: pointer; transition: 0.2s; color: #7f8c8d; background: #f1f2f6; margin-left: 5px; }
+    .action-btn:hover { transform: scale(1.1); }
+    .action-btn.edit:hover { background: #3498db; color: white; }
+    .action-btn.delete:hover { background: #e74c3c; color: white; }
+    .text-right { text-align: right; }
+
+    /* CSS PRECEDENTE MODALS */
+    .modern-modal { width: 850px; max-width: 95%; padding: 0; border-radius: 12px; overflow: hidden; background: white; }
+    .modal-header-modern { padding: 20px 30px; background: #f8f9fa; border-bottom: 1px solid #eee; }
+    .btn-close-modern { background: none; border: none; font-size: 1.5rem; color: #999; transition: 0.2s; padding: 5px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .btn-close-modern:hover { color: #e74c3c; background: #ffebee; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 30px; padding: 30px; }
+    .form-label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; font-size: 0.9rem; }
+    .modern-input { width: 100%; padding: 12px 15px; border: 1px solid #dfe6e9; border-radius: 8px; font-size: 1rem; transition: 0.3s; box-sizing: border-box; }
+    .modern-input:focus { border-color: #3498db; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); outline: none; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .image-upload-container { position: relative; border: 2px dashed #dfe6e9; border-radius: 12px; padding: 10px; text-align: center; background: #fcfcfc; transition: 0.3s; height: 220px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .image-upload-container:hover { border-color: #3498db; background: #f0f8ff; }
+    .current-image-preview { max-width: 100%; max-height: 160px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .file-input-hidden { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+    .upload-btn-fake { background: white; border: 1px solid #dfe6e9; padding: 8px 15px; border-radius: 20px; font-size: 0.85rem; color: #555; pointer-events: none; }
+    .modal-footer-modern { padding: 20px 30px; background: #f8f9fa; border-top: 1px solid #eee; text-align: right; }
+    .save-btn-modern { background: #3498db; color: white; border: none; padding: 12px 25px; font-size: 1rem; border-radius: 5px; cursor: pointer; }
+</style>
+
+<script>
+    function apriTab(tabName, btn) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + tabName).classList.add('active'); btn.classList.add('active'); }
+    function apriModalNuovo() { document.getElementById('modal-new').style.display = 'block'; }
+    function apriModalModifica(prodotto) { document.getElementById('edit-id').value = prodotto._id; document.getElementById('edit-nome').value = prodotto.nome; document.getElementById('edit-prezzo').value = prodotto.prezzo; document.getElementById('edit-cat').value = prodotto.categoria; document.getElementById('edit-misure').value = prodotto.misure || ''; document.getElementById('edit-materiali').value = prodotto.materiali || ''; document.getElementById('edit-desc').value = prodotto.descrizione || ''; document.getElementById('edit-img-preview').src = prodotto.immagine; document.getElementById('edit-file-input').value = ''; document.getElementById('modal-edit').style.display = 'block'; }
+    function previewNuovaImmagine(event) { const reader = new FileReader(); reader.onload = function(){ document.getElementById('edit-img-preview').src = reader.result; }; if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]); }
+    function inviaProdotto(type) { const form = document.getElementById('form-' + type); const formData = new FormData(form); const url = type === 'new' ? '/api/nuovo_prodotto' : '/api/modifica_prodotto'; if(type === 'new' && (!formData.get('nome') || !formData.get('prezzo') || !formData.get('immagine').name)){ alert("Compila tutti i campi!"); return; } fetch(url, { method: 'POST', body: formData }).then(res => res.json()).then(data => { if(data.success) { location.reload(); } else { alert("Errore: " + data.errore); } }); }
+    function eliminaProdotto(id) { if(!confirm("Sei sicuro?")) return; fetch('/api/elimina_prodotto', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id: id }) }).then(res => res.json()).then(data => { if(data.success) location.reload(); }); }
+    function filtraTabella() { const testo = document.getElementById('search-prod').value.toLowerCase(); const categoria = document.getElementById('filter-cat').value; const righe = document.querySelectorAll('.prod-row'); let trovati = 0; righe.forEach(riga => { const nome = riga.querySelector('.prod-name').innerText.toLowerCase(); const catRiga = riga.getAttribute('data-cat'); if (nome.includes(testo) && (categoria === 'Tutte' || catRiga === categoria)) { riga.style.display = ''; trovati++; } else { riga.style.display = 'none'; } }); document.getElementById('no-results').style.display = trovati === 0 ? 'block' : 'none'; }
+</script>
+
+{% endblock %}
