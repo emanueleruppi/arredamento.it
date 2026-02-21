@@ -22,8 +22,7 @@ Un'applicazione web e-commerce completa per la vendita di mobili e arredamento m
 
 * **Backend:** Python 3, Flask
 * **Database:** MongoDB (libreria `pymongo`)
-* **Frontend:** HTML5, CSS3, Vanilla JavaScript
-* **Librerie Extra:** `werkzeug.security` (hashing password), FontAwesome (Icone)
+* **Frontend:** HTML5, CSS3,  JavaScript
 
 ---
 
